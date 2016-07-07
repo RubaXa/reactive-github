@@ -28,7 +28,8 @@ build/Release
 jam
 packages
 node_modules
-compiled
+dist
+typings
 
 # IDE
 .idea

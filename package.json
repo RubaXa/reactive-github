@@ -1,0 +1,29 @@
+{
+  "name": "reactive-github",
+  "version": "0.1.0",
+  "description": "Alternate version web-ui for github using FRP.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RubaXa/reactive-github.git"
+  },
+  "keywords": [
+    "rubaxa",
+    "github",
+    "frp",
+    "rdot",
+    "reactivedot"
+  ],
+  "author": "RubaXa <trash@rubaxa.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/RubaXa/reactive-github/issues"
+  },
+  "homepage": "https://github.com/RubaXa/reactive-github#readme",
+  "devDependencies": {
+    "rdot": "0.1.1"
+  }
+}
