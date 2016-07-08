@@ -1,44 +1,72 @@
 import config, {IConfig} from '../stream/config';
 import ReactiveDot, {ReactiveState} from 'rdot';
 
-export type IOAuthAPICall = (method:string, options:IOAuthAPICallOptions) => Promise<any>;
+export type IOAuthAPICall<D, F> = (method:string, options:OAuthAPICallOptions) => IOAuthAPICallDeferred<D, F>;
 
-interface IOAuthIO {
+interface IOAuthAPICallDeferred<D, F> {
+	done:(callback:(result:D) => void) => IOAuthAPICallDeferred<D,F>;
+	fail:(callback:(error:F) => void) => IOAuthAPICallDeferred<D,F>;
+}
+
+interface OAuthIO {
     initialize:(key:string) => void;
-    popup:(provider:string, options:any) => IOAuthIOPromise
+    popup:(provider:string, options:any) => IOAuthAPICallDeferred<OAuthAPI, Error>
 }
 
-interface IOAuthIOPromise {
-    done:(callback:(api:IOAuthAPI) => void) => IOAuthIOPromise;
-    fail:(callback:(err:Error) => void) => IOAuthIOPromise;
-}
-
-export interface IOAuthAPICallOptions {
+export interface OAuthAPICallOptions {
     data: any;
 }
 
-export interface IOAuthAPI {
-    get:IOAuthAPICall;
-    post:IOAuthAPICall;
+export interface OAuthAPI {
+    get:IOAuthAPICall<any, Error>;
+    post:IOAuthAPICall<any, Error>;
 }
 
-export default new class OAuthAPI extends ReactiveDot<IOAuthAPI | ReactiveState> {
-    private oauth:IOAuthIO = window['OAuth'];
+export default new class OAuthService {
+    private oauth:OAuthIO = window['OAuth'];
+    private stream = new ReactiveDot<OAuthAPI | ReactiveState>(ReactiveState.INITIALIZATION);
     private promise:Promise<OAuthAPI>;
 
 	constructor() {
-		super(dot => {
-            this.init();
-            return ReactiveDot.INITIALIZATION;
-		});
-        
         config
             .map<string>((cfg:IConfig) => cfg.OAUTH_PUBLIC_KEY)
             .filter((key:string) => key != null)
             .onValue((key:string) => {
-                this.oauth.initialize(config.get().OAUTH_PUBLIC_KEY);
+                this.oauth.initialize(key);
+                this.stream.set(() => {
+                    this.init();
+                    return ReactiveState.INTERACTIVE;
+                });
             })
         ;
+	}
+
+    get():OAuthAPI|ReactiveState {
+        return this.stream.get();
+    }
+
+    onValue(callback:(value:OAuthAPI|string) => void):this {
+        this.stream.onValue(callback);
+        return this;
+    }
+
+	fetch(method:string, data?:any):ReactiveDot<ReactiveState> {
+		let promise;
+
+		return new ReactiveDot<ReactiveState>((dot) => {
+			const api = this.stream.get();
+			
+			if (api instanceof ReactiveState) {
+				return api;
+			}
+			else {
+				promise = promise || api.get(method, {data})
+					.done(data => dot.set(new ReactiveState('ready', data)))
+					.fail(err => dot.set(new ReactiveState('error', err)));
+
+				return ReactiveState.PROCESSING;
+			}
+		});
 	}
 
     private init() {
@@ -46,12 +74,15 @@ export default new class OAuthAPI extends ReactiveDot<IOAuthAPI | ReactiveState>
             this.promise = this.openPopup(true)
                 .catch((err:Error) => {
                     if (/popup/.test(err.toString())) {
-                        return this.openPopup(false).catch(err => this.set(err));
+                        return this.openPopup(false).catch(err => this.stream.set(err));
                     }
                     
                     return err;
                 })
-                .then((api:OAuthAPI) => this.set(api));
+                .then<OAuthAPI>((api:OAuthAPI) => {
+                    this.stream.set(api);
+                    return null;
+                });
         }
     }
 
