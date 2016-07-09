@@ -6,9 +6,29 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 
 	<title>Reactive GitHub</title>
+	
+	<link crossorigin="anonymous" href="https://assets-cdn.github.com/assets/frameworks-08a7ddd5fb70803ff8390bcae350fe24cca52e8a1266dedb493c666c1d625366.css" integrity="sha256-CKfd1ftwgD/4OQvK41D+JMylLooSZt7bSTxmbB1iU2Y=" media="all" rel="stylesheet"/>
+	<link crossorigin="anonymous" href="https://assets-cdn.github.com/assets/github-09d197b2001b1f26848c0014339efea1e35276ca3fe01b04e4842562feb31fe0.css" integrity="sha256-CdGXsgAbHyaEjAAUM57+oeNSdso/4BsE5IQlYv6zH+A=" media="all" rel="stylesheet"/>
+
+	<style>
+		body {
+			background: url('https://wallpaperscraft.com/image/glow_background_line_paint_51877_2560x1440.jpg');
+			background-size: cover;
+		}
+
+		.session-authentication {
+			margin-top: 100px;
+			background-color: transparent;
+		}
+
+		.session-authentication .header-logo,
+		.session-authentication .auth-form-header {
+			color: #fff;
+			text-shadow: 1px 1px rgba(0,0,0,.3)
+		}
+	</style>
 </head>
 <body>
-
 	<div id="root"></div>
 
 	<script src="./vendor/oauth.min.js"></script>

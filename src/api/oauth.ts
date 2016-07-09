@@ -74,7 +74,9 @@ export default new class OAuthService {
             this.promise = this.openPopup(true)
                 .catch((err:Error) => {
                     if (/popup/.test(err.toString())) {
-                        return this.openPopup(false).catch(err => this.stream.set(err));
+                        return this.openPopup(false).catch(err => {
+                            return this.stream.set(new ReactiveState('error', err));
+                        });
                     }
                     
                     return err;
@@ -86,7 +88,7 @@ export default new class OAuthService {
         }
     }
 
-    private openPopup(cache:boolean):Promise<OAuthAPI> {
+    private openPopup(cache:boolean):Promise<any> {
         return new Promise((resolve, reject) => {
             this.oauth.popup('github', {cache}).done(resolve).fail(reject);
         });
