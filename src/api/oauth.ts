@@ -24,7 +24,7 @@ export interface OAuthAPI {
 
 export default new class OAuthService {
     private oauth:OAuthIO = window['OAuth'];
-    private stream = new ReactiveDot<OAuthAPI | ReactiveState>(ReactiveState.INITIALIZATION);
+    private stream = new ReactiveDot<ReactiveState>(ReactiveState.INITIALIZATION);
     private promise:Promise<OAuthAPI>;
 
 	constructor() {
@@ -41,7 +41,7 @@ export default new class OAuthService {
         ;
 	}
 
-    get():OAuthAPI|ReactiveState {
+    get():ReactiveState {
         return this.stream.get();
     }
 
@@ -54,15 +54,14 @@ export default new class OAuthService {
 		let promise;
 
 		return new ReactiveDot<ReactiveState>((dot) => {
-			const api = this.stream.get();
+			const state = this.stream.get();
 			
-			if (api instanceof ReactiveState) {
-				return api;
-			}
-			else {
-				promise = promise || api.get(method, {data})
-					.done(data => dot.set(new ReactiveState('ready', data)))
-					.fail(err => dot.set(new ReactiveState('error', err)));
+			if (state != ReactiveState.READY) {
+				return state;
+			} else {
+				promise = promise || state.detail.get(method, {data})
+					.done(data => dot.set(ReactiveState.READY.from(data)))
+					.fail(err => dot.set(ReactiveState.ERROR.from(err)));
 
 				return ReactiveState.PROCESSING;
 			}
@@ -75,14 +74,14 @@ export default new class OAuthService {
                 .catch((err:Error) => {
                     if (/popup/.test(err.toString())) {
                         return this.openPopup(false).catch(err => {
-                            return this.stream.set(new ReactiveState('error', err));
+                            return this.stream.set(ReactiveState.ERROR.from(err));
                         });
                     }
                     
                     return err;
                 })
                 .then<OAuthAPI>((api:OAuthAPI) => {
-                    this.stream.set(api);
+                    this.stream.set(ReactiveState.READY.from(api));
                     return null;
                 });
         }

@@ -1,10 +1,11 @@
-import {rfunction, RStream} from 'rdot';
+import ui from './_ui';
+import {RStream} from 'rdot';
 
 export interface IAuthFromProps {
 	onSignIn:RStream<Event>;
 }
 
-export default rfunction<string>((props:IAuthFromProps):string => `
+export default ui<IAuthFromProps>(`
 	<div class="logged-out env-production macintosh session-authentication page-responsive min-width-0">
 		<div class="header header-logged-out width-full" role="banner">
 			<div class="container clearfix width-full">
