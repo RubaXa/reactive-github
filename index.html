@@ -11,9 +11,18 @@
 	<link crossorigin="anonymous" href="https://assets-cdn.github.com/assets/github-09d197b2001b1f26848c0014339efea1e35276ca3fe01b04e4842562feb31fe0.css" integrity="sha256-CdGXsgAbHyaEjAAUM57+oeNSdso/4BsE5IQlYv6zH+A=" media="all" rel="stylesheet"/>
 
 	<style>
-		body {
+		body::before {
+			position: fixed;
+			left: 0;
+			top: 0;
+			z-index: -1;
+			display: block;
+			content: '';
+			width: 100%;
+			height: 100%;
 			background: url('https://wallpaperscraft.com/image/glow_background_line_paint_51877_2560x1440.jpg');
 			background-size: cover;
+			background-position: 50% 0;
 		}
 
 		.session-authentication {
