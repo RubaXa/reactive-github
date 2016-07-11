@@ -29,7 +29,7 @@ function parse(location:Location):IRoute {
 	};
 }
 
-export default new class Router extends ReactiveDot<IRoute> {
+export default new class RouterStream extends ReactiveDot<IRoute> {
 	constructor() {
 		super(parse(location));
 

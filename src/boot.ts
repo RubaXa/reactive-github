@@ -1,11 +1,11 @@
 import {rfunction} from 'rdot';
 
-import config from './stream/config';
-import authStream from './stream/auth-user';
+import authUserStream from './stream/auth-user';
+import configStream from './stream/config';
 
 import ui from './ui/_entry-point';
 
-config.set({
+configStream.set({
     OAUTH_PUBLIC_KEY: 'xw5aLnVfIr9iloyAmLBbPCEl5fg'
 });
 
