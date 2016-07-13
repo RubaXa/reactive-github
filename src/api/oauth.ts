@@ -1,4 +1,5 @@
-import config, {IConfig} from '../stream/config';
+import configStream from '../stream/config';
+import sessionStream from '../stream/session';
 import ReactiveDot, {ReactiveState} from 'rdot';
 
 export type IOAuthAPICall<D, F> = (method:string, options:OAuthAPICallOptions) => IOAuthAPICallDeferred<D, F>;
@@ -24,70 +25,77 @@ export interface OAuthAPI {
 
 export default new class OAuthService {
     private oauth:OAuthIO = window['OAuth'];
-    private stream = new ReactiveDot<ReactiveState>(ReactiveState.INITIALIZATION);
+    private stream:ReactiveDot<ReactiveState>;
     private promise:Promise<OAuthAPI>;
 
 	constructor() {
-        config
-            .map<string>((cfg:IConfig) => cfg.OAUTH_PUBLIC_KEY)
-            .filter((key:string) => key != null)
-            .onValue((key:string) => {
-                this.oauth.initialize(key);
-                this.stream.set(() => {
-                    this.init();
-                    return ReactiveState.INTERACTIVE;
-                });
-            })
-        ;
+		// Конфигурируем приватный поток
+		this.stream = configStream
+			.map(cfg => cfg.OAUTH_PUBLIC_KEY)
+			.filter(key => key != null)
+			.map(key => {
+				this.oauth.initialize(key);
+				return ReactiveState.INTERACTIVE.from(this.oauth);
+			})
+			.startWith(ReactiveState.INITIALIZATION)
+			.map(state => {
+				const session = sessionStream.get();
+				
+				if (session.authorized && state.is(ReactiveState.INTERACTIVE)) {
+					this.login()
+							.then(api => this.stream.set(ReactiveState.READY.from(api)))
+							.catch(err => this.stream.set(ReactiveState.ERROR.from(err)))
+					;
+
+					return ReactiveState.AWAITING;
+				} else {
+					return state;
+				}
+			})
+			.log('oauth')
+		;
 	}
 
     get():ReactiveState {
         return this.stream.get();
     }
 
-    onValue(callback:(value:OAuthAPI|string) => void):this {
-        this.stream.onValue(callback);
-        return this;
-    }
-
 	fetch(method:string, data?:any):ReactiveDot<ReactiveState> {
-		let promise;
+		const dot = new ReactiveDot<ReactiveState>(ReactiveState.INITIALIZATION);
 
-		return new ReactiveDot<ReactiveState>((dot) => {
-			const state = this.stream.get();
-			
-			if (state != ReactiveState.READY) {
-				return state;
-			} else {
-				promise = promise || state.detail.get(method, {data})
+		this.stream.onValue(function callback(state) {
+			if (state.is(ReactiveState.READY)) {
+				this.stream.offValue(callback);
+				
+				dot.set(ReactiveState.PROCESSING);
+
+				state.detail.get(method, {data})
 					.done(data => dot.set(ReactiveState.READY.from(data)))
 					.fail(err => dot.set(ReactiveState.ERROR.from(err)));
-
-				return ReactiveState.PROCESSING;
+			} else {
+				dot.set(state.from(null));
 			}
-		});
+		}.bind(this));
+
+		return dot;
 	}
 
-    private init() {
+    public login():Promise<OAuthAPI> {
         if (!this.promise) {
             this.promise = this.openPopup(true)
                 .catch((err:Error) => {
                     if (/popup/.test(err.toString())) {
-                        return this.openPopup(false).catch(err => {
-                            return this.stream.set(ReactiveState.ERROR.from(err));
-                        });
+                        return this.openPopup(false);
                     }
                     
                     return err;
-                })
-                .then<OAuthAPI>((api:OAuthAPI) => {
-                    this.stream.set(ReactiveState.READY.from(api));
-                    return null;
                 });
         }
+
+		return this.promise;
     }
 
-    private openPopup(cache:boolean):Promise<any> {
+    private openPopup(cache:boolean):Promise<OAuthAPI> {
         return new Promise((resolve, reject) => {
             this.oauth.popup('github', {cache}).done(resolve).fail(reject);
         });

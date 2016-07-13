@@ -15,7 +15,7 @@ export default new class LoggerStream extends ReactiveDot<ILog[]>  {
 		console[type](data);
 	}
 
-	log(message) {
+	write(message) {
 		this.add('log', message);
 	}
 

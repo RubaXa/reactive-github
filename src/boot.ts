@@ -1,11 +1,9 @@
-import {rfunction, RStream, ReactiveState} from 'rdot';
-
 import oauth from './api/oauth';
 
+// Data
 import configStream from './stream/config';
-import sessionStream from './stream/session';
-import authUserStream from './stream/auth-user';
 
+// UI
 import ui from './ui/_entry-point';
 
 configStream.set({
@@ -13,19 +11,6 @@ configStream.set({
 });
 
 export default (el:HTMLElement) => {
-	const onSignIn = new RStream<Event>();
-
-	onSignIn.onValue(rfunction(() => {
-		const state = oauth.get();
-		
-		if (state.is(ReactiveState.READY)) {
-			sessionStream.set({authorized: true});
-		}
-	}));
-
-	// Bind UI
-	ui(el, {
-		onSignIn,
-		authUserStream
-	});
+	// Сonfiguration & Binding 
+	ui(el);
 };

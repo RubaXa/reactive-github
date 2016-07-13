@@ -1,12 +1,13 @@
-import ReactiveDot from 'rdot';
+import {ReactiveState} from 'rdot';
 import oauth from './oauth';
 
-export default new class {
-	
-	me():ReactiveDot<any> {
-		return oauth.fetch('/user').map(state => {
-			return state.detail;
-		});
-	}
+class GitHub {
+	private _me;
 
+	me():ReactiveState {
+		!this._me && (this._me = oauth.fetch('/user'));
+		return this._me.get();
+	}
 }
+
+export default new GitHub
